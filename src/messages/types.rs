@@ -34,7 +34,6 @@ impl EpfdType {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ShipType {
     Reserved(u8),

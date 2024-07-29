@@ -4,32 +4,17 @@
 //!
 //! # Example:
 //! ```
-//! use ais::{AisFragments, AisParser};
+//! use ais::{decode, decode_from_file, decode_from_udp, decode_from_tcp};
 //! use ais::messages::AisMessage;
 //!
-//! // The line below is an NMEA sentence, much as you'd see coming out of an AIS decoder.
-//! let line = b"!AIVDM,1,1,,B,E>kb9O9aS@7PUh10dh19@;0Tah2cWrfP:l?M`00003vP100,0*01";
-//!
-//! let mut parser = AisParser::new();
-//! if let AisFragments::Complete(sentence) = parser.parse(line, true)? {
-//!     // This sentence is complete, ie unfragmented
-//!     assert_eq!(sentence.num_fragments, 1);
-//!     // The data was transmitted on AIS channel B
-//!     assert_eq!(sentence.channel, Some('B'));
-//!
-//!     if let Some(message) = sentence.message {
-//!         match message {
-//!             AisMessage::AidToNavigationReport(report) => {
-//!                 assert_eq!(report.mmsi, 993692028);
-//!                 assert_eq!(report.name, "SF OAK BAY BR VAIS E");
-//!                 // There are a ton more fields available here
-//!             },
-//!             _ => panic!("Unexpected message type"),
-//!         }
-//!     }
+//! // Decode a single AIS message
+//! let message = b"!AIVDM,1,1,,B,15NG6V0P01G?cFhE`R2IU?wn28R>,0*05";
+//! match decode(message) {
+//!     Ok(decoded) => println!("Decoded message: {:?}", decoded),
+//!     Err(e) => eprintln!("Failed to decode message: {:?}", e),
 //! }
-//! # Ok::<(), ais::errors::Error>(())
 //! ```
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[doc(hidden)]
@@ -73,9 +58,11 @@ pub mod lib {
     }
 }
 
+pub mod decoders;
 pub mod errors;
 pub mod messages;
 pub mod sentence;
+pub use decoders::*;
 
 pub use errors::Result;
 pub use sentence::{AisFragments, AisParser};
