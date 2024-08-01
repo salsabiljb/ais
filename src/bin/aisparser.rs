@@ -1,5 +1,3 @@
-// src/bin/aisparser.rs
-
 use ais::decoders::utils::{decode_from_file, decode_from_tcp, decode_from_udp};
 use clap::{Arg, Command};
 use std::error::Error;
