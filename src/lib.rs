@@ -4,7 +4,7 @@
 //!
 //! # Example:
 //! ```
-//! use ais::{decode, decode_from_file, decode_from_udp, decode_from_tcp};
+//! use ais::decoders::utils::{decode, decode_from_file, decode_from_udp, decode_from_tcp};
 //! use ais::messages::AisMessage;
 //!
 //! // Decode a single AIS message

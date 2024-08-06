@@ -21,6 +21,7 @@ pub mod static_and_voyage_related_data;
 pub mod static_data_report;
 pub mod types;
 pub mod utc_date_response;
+pub mod tag_block;
 
 pub use parsers::message_type;
 

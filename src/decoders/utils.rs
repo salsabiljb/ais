@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use crate::messages::tag_block::TagBlock;
 use crate::messages::AisMessage;
 use crate::sentence::{AisFragments, AisParser};
 use std::error::Error as StdError;
@@ -6,29 +7,60 @@ use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::{TcpStream, UdpSocket};
 
-// Function to parse NMEA line
 async fn parse_nmea_line(parser: &mut AisParser, line: &[u8]) {
-    match parser.parse(line, true) {
-        Ok(sentence) => {
-            if let AisFragments::Complete(sentence) = sentence {
-                println!(
-                    "{:?}\t{:?}",
-                    std::str::from_utf8(line).unwrap(),
-                    sentence.message
-                );
+    // Convert the line to a string for easier manipulation
+    let line_str = std::str::from_utf8(line).expect("Invalid UTF-8 sequence");
+
+    // Print the received message
+    println!("Received message: {}", line_str);
+
+    // Check for a tag block by looking for the start of a NMEA sentence ('!')
+    if let Some(nmea_start_idx) = line_str.find('!') {
+        // Extract the tag block (everything before the '!') and the NMEA sentence
+        let tag_block_str = &line_str[..nmea_start_idx];
+        let nmea_sentence = &line_str[nmea_start_idx..];
+
+        // Check if there's a valid tag block (should start and end with '\')
+        if tag_block_str.starts_with('\\') && tag_block_str.ends_with('\\') {
+            // Remove the leading and trailing backslashes from the tag block
+            let tag_block_content = &tag_block_str[1..tag_block_str.len() - 1];
+
+            // Parse the tag block
+            match TagBlock::parse(tag_block_content) {
+                Ok(Some(tag_block)) => {
+                    println!("Parsed TagBlock: {:?}", tag_block);
+                }
+                Ok(None) => {
+                    println!("No tag block found");
+                }
+                Err(err) => {
+                    eprintln!("Error parsing tag block: {}", err);
+                    return;
+                }
             }
         }
-        Err(err) => {
-            eprintln!(
-                "Error parsing line {:?}: {:?}",
-                std::str::from_utf8(line).unwrap(),
-                err
-            );
+
+        // Parse the NMEA sentence
+        match parser.parse(nmea_sentence.as_bytes(), true) {
+            Ok((_, AisFragments::Complete(sentence))) => {
+                println!(
+                    "Parsed NMEA Sentence: {:?}\nMessage: {:?}",
+                    nmea_sentence, sentence.message
+                );
+            }
+            Err(err) => {
+                eprintln!("Error parsing line {:?}: {:?}", nmea_sentence, err);
+            }
+            _ => {}
         }
+
+        // Print separator between messages
+        println!("*************************");
+    } else {
+        eprintln!("No valid NMEA sentence found in line");
     }
 }
-
-// Decodes a stream of ais messages from a UDP
+// Decodes a stream of AIS messages from UDP
 pub async fn decode_from_udp(address: &str) -> Result<(), Box<dyn StdError>> {
     let socket = UdpSocket::bind(address).await?;
     let mut buf = [0; 1024];
@@ -40,7 +72,7 @@ pub async fn decode_from_udp(address: &str) -> Result<(), Box<dyn StdError>> {
     }
 }
 
-// Decodes a stream of ais messages from a TCP
+// Decodes a stream of AIS messages from TCP
 pub async fn decode_from_tcp(address: &str) -> Result<(), Box<dyn StdError>> {
     let stream = TcpStream::connect(address).await?;
     let mut parser = AisParser::new();
@@ -55,7 +87,7 @@ pub async fn decode_from_tcp(address: &str) -> Result<(), Box<dyn StdError>> {
     Ok(())
 }
 
-// Decodes a file of ais messages
+// Decodes a file of AIS messages
 pub async fn decode_from_file(path: &str) -> Result<(), Box<dyn StdError>> {
     let file = File::open(path).await?;
     let reader = BufReader::new(file);
@@ -73,7 +105,13 @@ pub async fn decode_from_file(path: &str) -> Result<(), Box<dyn StdError>> {
 pub fn decode(message: &[u8]) -> Result<AisMessage, Error> {
     let mut parser = AisParser::new();
     match parser.parse(message, true)? {
-        AisFragments::Complete(sentence) => sentence.message.ok_or(Error::Nmea {
+        (Some(tag_block), AisFragments::Complete(sentence)) => {
+            println!("TagBlock: {:?}", tag_block);
+            sentence.message.ok_or(Error::Nmea {
+                msg: "Incomplete message".into(),
+            })
+        }
+        (None, AisFragments::Complete(sentence)) => sentence.message.ok_or(Error::Nmea {
             msg: "Incomplete message".into(),
         }),
         _ => Err(Error::Nmea {
@@ -105,6 +143,7 @@ mod tests {
         assert_eq!(report.timestamp, 59);
         assert!(report.raim);
     }
+
     #[tokio::test]
     async fn test_parse_nmea_line() {
         let mut parser = AisParser::new();
@@ -112,7 +151,7 @@ mod tests {
 
         parse_nmea_line(&mut parser, line).await;
 
-        if let Ok(AisFragments::Complete(sentence)) = parser.parse(line, true) {
+        if let Ok((_, AisFragments::Complete(sentence))) = parser.parse(line, true) {
             if let Some(AisMessage::PositionReport(ref report)) = sentence.message {
                 validate_position_report(report);
             } else {
@@ -138,7 +177,7 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         let mut parser = AisParser::new();
-        if let Ok(AisFragments::Complete(sentence)) = parser.parse(test_data, true) {
+        if let Ok((_, AisFragments::Complete(sentence))) = parser.parse(test_data, true) {
             if let Some(AisMessage::PositionReport(ref report)) = sentence.message {
                 validate_position_report(report);
             } else {
@@ -166,7 +205,7 @@ mod tests {
 
         let message = b"!AIVDM,1,1,,B,15NG6V0P01G?cFhE`R2IU?wn28R>,0*05";
         let mut parser = AisParser::new();
-        if let Ok(AisFragments::Complete(sentence)) = parser.parse(message, true) {
+        if let Ok((_, AisFragments::Complete(sentence))) = parser.parse(message, true) {
             if let Some(AisMessage::PositionReport(ref report)) = sentence.message {
                 validate_position_report(report);
             } else {
@@ -187,7 +226,7 @@ mod tests {
         decode_from_file(file_path.to_str().unwrap()).await.unwrap();
 
         let mut parser = AisParser::new();
-        if let Ok(AisFragments::Complete(sentence)) = parser.parse(test_data, true) {
+        if let Ok((_, AisFragments::Complete(sentence))) = parser.parse(test_data, true) {
             if let Some(AisMessage::PositionReport(ref report)) = sentence.message {
                 validate_position_report(report);
             } else {
