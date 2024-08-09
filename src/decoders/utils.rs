@@ -6,9 +6,18 @@ use std::error::Error as StdError;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::{TcpStream, UdpSocket};
+/// Parses a single line of NMEA data using the provided AIS parser.
+///
+/// This function attempts to parse a given NMEA line into a tag block and an AIS message,
+/// printing the results to the console.
+///
+/// # Arguments
+/// * `parser` - The AIS parser to use.
+/// * `line` - A byte slice containing the NMEA line to parse.
+///
 
 async fn parse_nmea_line(parser: &mut AisParser, line: &[u8]) {
-    // Convert the line to a string for easier manipulation
+    // Convert the line to a string
     let line_str = std::str::from_utf8(line).expect("Invalid UTF-8 sequence");
 
     // Print the received message
@@ -60,7 +69,15 @@ async fn parse_nmea_line(parser: &mut AisParser, line: &[u8]) {
         eprintln!("No valid NMEA sentence found in line");
     }
 }
-// Decodes a stream of AIS messages from UDP
+
+/// Decodes a stream of AIS messages from UDP.
+///
+/// This function binds to the given UDP address and decodes incoming AIS messages, printing the results to the console.
+///
+/// # Arguments
+/// * `address` - The address to bind to in the form "ip:port".
+///
+
 pub async fn decode_from_udp(address: &str) -> Result<(), Box<dyn StdError>> {
     let socket = UdpSocket::bind(address).await?;
     let mut buf = [0; 1024];
@@ -72,7 +89,14 @@ pub async fn decode_from_udp(address: &str) -> Result<(), Box<dyn StdError>> {
     }
 }
 
-// Decodes a stream of AIS messages from TCP
+/// Decodes a stream of AIS messages from TCP.
+///
+/// This function connects to the given TCP address and decodes incoming AIS messages,
+/// printing the results to the console.
+///
+/// # Arguments
+/// * `address` - The address to connect to in the form "ip:port".
+///
 pub async fn decode_from_tcp(address: &str) -> Result<(), Box<dyn StdError>> {
     let stream = TcpStream::connect(address).await?;
     let mut parser = AisParser::new();
@@ -87,7 +111,14 @@ pub async fn decode_from_tcp(address: &str) -> Result<(), Box<dyn StdError>> {
     Ok(())
 }
 
-// Decodes a file of AIS messages
+/// Decodes a file of AIS messages.
+///
+/// This function reads AIS messages from a file and decodes them, printing the results to the console.
+///
+/// # Arguments
+/// * `path` - The path to the file containing AIS messages.
+///
+///
 pub async fn decode_from_file(path: &str) -> Result<(), Box<dyn StdError>> {
     let file = File::open(path).await?;
     let reader = BufReader::new(file);
@@ -101,7 +132,20 @@ pub async fn decode_from_file(path: &str) -> Result<(), Box<dyn StdError>> {
     Ok(())
 }
 
-// Decodes a single message
+/// Decodes a single AIS message.
+///
+/// This function parses a single AIS message from a byte slice and returns the parsed message.
+///
+/// # Arguments
+/// * `message` - A byte slice containing the AIS message to parse.
+///
+/// # Returns
+/// * A result containing the parsed AIS message or an error.
+///
+/// # Errors
+/// * Returns an error if the message is incomplete or cannot be parsed.
+///
+
 pub fn decode(message: &[u8]) -> Result<AisMessage, Error> {
     let mut parser = AisParser::new();
     match parser.parse(message, true)? {
