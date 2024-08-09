@@ -4,7 +4,7 @@
 //!
 //! # Example:
 //! ```
-//! use ais::{decode, decode_from_file, decode_from_udp, decode_from_tcp};
+//! use ais::decoders::utils::{decode, decode_from_file, decode_from_udp, decode_from_tcp};
 //! use ais::messages::AisMessage;
 //!
 //! // Decode a single AIS message
@@ -62,7 +62,7 @@ pub mod decoders;
 pub mod errors;
 pub mod messages;
 pub mod sentence;
-pub use decoders::*;
+pub use decoders::utils::{decode, decode_from_file, decode_from_tcp, decode_from_udp};
 
 pub use errors::Result;
 pub use sentence::{AisFragments, AisParser};

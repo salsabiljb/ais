@@ -1,4 +1,4 @@
-use ais::decoders::utils::{decode_from_file, decode_from_tcp, decode_from_udp};
+use ais::{decode_from_file, decode_from_tcp, decode_from_udp};
 use clap::{Arg, Command};
 use std::error::Error;
 
