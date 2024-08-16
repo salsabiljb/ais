@@ -4,6 +4,7 @@ use crate::lib;
 use crate::sentence::AisRawData;
 
 pub mod aid_to_navigation_report;
+pub mod assignment_mode_command;
 pub mod base_station_report;
 pub mod binary_broadcast_message;
 pub mod data_link_management_message;
@@ -42,6 +43,7 @@ pub enum AisMessage {
     AidToNavigationReport(aid_to_navigation_report::AidToNavigationReport),
     StaticDataReport(static_data_report::StaticDataReport),
     UtcDateResponse(utc_date_response::UtcDateResponse),
+    AssignmentModeCommand(assignment_mode_command::AssignmentModeCommand),
 }
 
 /// Trait that describes specific types of AIS messages
@@ -76,6 +78,9 @@ pub fn parse(unarmored: &[u8]) -> Result<AisMessage> {
         )),
         15 => Ok(AisMessage::Interrogation(
             interrogation::Interrogation::parse(unarmored)?,
+        )),
+        16 => Ok(AisMessage::AssignmentModeCommand(
+            assignment_mode_command::AssignmentModeCommand::parse(unarmored)?,
         )),
         17 => Ok(AisMessage::DgnssBroadcastBinaryMessage(
             dgnss_broadcast_binary_message::DgnssBroadcastBinaryMessage::parse(unarmored)?,
