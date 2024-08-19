@@ -75,7 +75,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_type6_example() {
+    fn test_type6_example_1() {
         let bytestream = b"6B?n;be:cbapalgc;i6?Ow4";
         let bitstream = crate::messages::unarmor(bytestream, 2).unwrap();
         let report = BinaryAddressedMessage::parse(bitstream.as_ref()).unwrap();
@@ -92,21 +92,20 @@ mod tests {
     }
 
     #[test]
-    fn test_none_value_converter_for_creation() {
-        let report = BinaryAddressedMessage {
-            message_type: 6,
-            repeat_indicator: 0,
-            mmsi: 123456,
-            seqno: 0,
-            dest_mmsi: 0, // Represents a "None" value.
-            retransmit: false,
-            dac: 0,
-            fid: 0,
-            data: vec![], // Represents a "None" value.
-        };
+    fn test_type6_example_2() {
+        let bytestream = b"6>jR0600V:C0>da4P106P00";
+        let bitstream = crate::messages::unarmor(bytestream, 2).unwrap();
+        let report = BinaryAddressedMessage::parse(bitstream.as_ref()).unwrap();
 
-        // Test should succeed since dest_mmsi and data are allowed to be "None"
-        assert_eq!(report.mmsi, 123456);
-        assert!(report.data.is_empty());
+        assert_eq!(report.message_type, 6);
+        assert_eq!(report.repeat_indicator, 0);
+        assert_eq!(report.mmsi, 992509976);
+        assert_eq!(report.seqno, 0);
+        assert_eq!(report.dest_mmsi, 2500912);
+        assert_eq!(report.retransmit, false);
+        assert_eq!(report.dac, 235);
+        assert_eq!(report.fid, 10);
+        assert_eq!(report.data, vec![0x44, 0x80, 0x10, 0x06, 0x80, 0x00]);
     }
+
 }
