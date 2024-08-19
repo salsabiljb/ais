@@ -42,8 +42,27 @@ fn parse_base(data: &[u8]) -> IResult<&[u8], LongRangeAisBroadcastMessage> {
         let (data, position_accuracy) = map(take_bits(1u8), Accuracy::parse)(data)?;
         let (data, raim) = map(take_bits(1u8), u8_to_bool)(data)?;
         let (data, navigation_status) = map(take_bits(4u8), NavigationStatus::parse)(data)?;
-        let (data, longitude) = map(|data| signed_i32(data, 18), parse_longitude)(data)?;
-        let (data, latitude) = map(|data| signed_i32(data, 17), parse_latitude)(data)?;
+
+        let (data, longitude) = map(|data| signed_i32(data, 18), |lon| {
+            parse_longitude(lon).map(|val| {
+                if message_type == 27 {
+                    val * 1000.0
+                } else {
+                    val
+                }
+            })
+        })(data)?;
+
+        let (data, latitude) = map(|data| signed_i32(data, 17), |lat| {
+            parse_latitude(lat).map(|val| {
+                if message_type == 27 {
+                    val * 1000.0
+                } else {
+                    val
+                }
+            })
+        })(data)?;
+
         let (data, speed_over_ground) = map(take_bits(6u16), parse_speed_over_ground_62)(data)?;
         let (data, course_over_ground) = map(take_bits(9u16), parse_cog_511)(data)?;
         let (data, gnss_position_status) = map(take_bits(1u8), u8_to_bool)(data)?;
@@ -67,6 +86,7 @@ fn parse_base(data: &[u8]) -> IResult<&[u8], LongRangeAisBroadcastMessage> {
     })(data)
 }
 
+
 /// Parse the speed over ground for Long Range AIS Broadcast Message (type 27)
 fn parse_speed_over_ground_62(data: u16) -> Option<f32> {
     match data {
@@ -86,6 +106,8 @@ fn parse_cog_511(data: u16) -> Option<f32> {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unreadable_literal)]
+    use crate::test_helpers::f32_equal_naive;
+
     use super::*;
     // use crate::test_helpers::*;
     #[test]
@@ -103,8 +125,8 @@ mod tests {
             report.navigation_status,
             Some(NavigationStatus::NotUnderCommand)
         );
-        assert_eq!(report.longitude.unwrap(), 0.137023333);
-        assert_eq!(report.latitude.unwrap(), 0.00484);
+        f32_equal_naive(report.longitude.unwrap(), 137.023333);
+        f32_equal_naive(report.latitude.unwrap(), 4.84);
         assert_eq!(report.speed_over_ground, Some(57.0));
         assert_eq!(report.course_over_ground, Some(167.0));
         assert_eq!(report.gnss_position_status, false);
@@ -118,11 +140,7 @@ mod tests {
 
         assert_eq!(report.message_type, 27);
         assert_eq!(report.mmsi, 1234567);
-        assert_eq!(report.longitude.unwrap(), -0.013368334);
-        assert_eq!(report.latitude.unwrap(), -0.050121665);
-        // f32_equal_naive(report.longitude.unwrap(), -13.36833);
-        // f32_equal_naive(report.latitude.unwrap(), -50.121667);
+        f32_equal_naive(report.longitude.unwrap(), -13.368334);
+        f32_equal_naive(report.latitude.unwrap(), -50.121665);
     }
 }
-
-//TODO! i need to double check both longitude and latitude
