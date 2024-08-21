@@ -240,16 +240,11 @@ impl From<ShipType> for u8 {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub enum Dte {
     Ready,
+    #[default]
     NotReady,
-}
-
-impl Default for Dte {
-    fn default() -> Self {
-        Dte::NotReady
-    }
 }
 
 impl From<u8> for Dte {
