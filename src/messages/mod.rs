@@ -2,6 +2,9 @@
 use crate::errors::Result;
 use crate::lib;
 use crate::sentence::AisRawData;
+use serde::Serialize;
+use std::fmt;
+
 
 pub mod addressed_safety_related;
 pub mod aid_to_navigation_report;
@@ -37,7 +40,7 @@ pub use parsers::message_type;
 use crate::lib::std::{format, vec, vec::Vec};
 
 /// Contains all structured messages recognized by this crate
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum AisMessage {
     PositionReport(position_report::PositionReport),
     BaseStationReport(base_station_report::BaseStationReport),
@@ -60,6 +63,36 @@ pub enum AisMessage {
     SafetyRelatedAcknowledgment(safety_related_acknowledgment::SafetyRelatedAcknowledge),
     LongRangeAisBroadcastMessage(long_range_ais_broadcast::LongRangeAisBroadcastMessage),
     BinaryAddressedMessage(binary_addressed::BinaryAddressedMessage),
+}
+
+
+impl fmt::Display for AisMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AisMessage::PositionReport(report) => write!(f, "PositionReport: {:?}", report),
+            AisMessage::BaseStationReport(report) => write!(f, "BaseStationReport: {:?}", report),
+            AisMessage::BinaryBroadcastMessage(message) => write!(f, "BinaryBroadcastMessage: {:?}", message),
+            AisMessage::Interrogation(interrogation) => write!(f, "Interrogation: {:?}", interrogation),
+            AisMessage::StaticAndVoyageRelatedData(data) => write!(f, "StaticAndVoyageRelatedData: {:?}", data),
+            AisMessage::DgnssBroadcastBinaryMessage(message) => write!(f, "DgnssBroadcastBinaryMessage: {:?}", message),
+            AisMessage::StandardClassBPositionReport(report) => write!(f, "StandardClassBPositionReport: {:?}", report),
+            AisMessage::ExtendedClassBPositionReport(report) => write!(f, "ExtendedClassBPositionReport: {:?}", report),
+            AisMessage::DataLinkManagementMessage(message) => write!(f, "DataLinkManagementMessage: {:?}", message),
+            AisMessage::AidToNavigationReport(report) => write!(f, "AidToNavigationReport: {:?}", report),
+            AisMessage::StaticDataReport(report) => write!(f, "StaticDataReport: {:?}", report),
+            AisMessage::UtcDateResponse(response) => write!(f, "UtcDateResponse: {:?}", response),
+            AisMessage::StandardAircraftPositionReport(report) => write!(f, "StandardAircraftPositionReport: {:?}", report),
+            AisMessage::AssignmentModeCommand(command) => write!(f, "AssignmentModeCommand: {:?}", command),
+            AisMessage::BinaryAcknowledgeMessage(message) => write!(f, "BinaryAcknowledgeMessage: {:?}", message),
+            AisMessage::UtcDateInquiry(inquiry) => write!(f, "UtcDateInquiry: {:?}", inquiry),
+            AisMessage::AddressedSafetyRelatedMessage(message) => write!(f, "AddressedSafetyRelatedMessage: {:?}", message),
+            AisMessage::SafetyRelatedBroadcastMessage(message) => write!(f, "SafetyRelatedBroadcastMessage: {:?}", message),
+            AisMessage::SafetyRelatedAcknowledgment(acknowledgment) => write!(f, "SafetyRelatedAcknowledgment: {:?}", acknowledgment),
+            AisMessage::LongRangeAisBroadcastMessage(message) => write!(f, "LongRangeAisBroadcastMessage: {:?}", message),
+            AisMessage::BinaryAddressedMessage(message) => write!(f, "BinaryAddressedMessage: {:?}", message),
+            _ => write!(f, "Unknown AisMessage"),
+        }
+    }
 }
 
 /// Trait that describes specific types of AIS messages

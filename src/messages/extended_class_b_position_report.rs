@@ -10,8 +10,9 @@ use crate::messages::types::ShipType;
 use nom::bits::{bits, complete::take as take_bits};
 use nom::combinator::map;
 use nom::IResult;
+use serde::Serialize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ExtendedClassBPositionReport {
     pub message_type: u8,
     pub repeat_indicator: u8,
