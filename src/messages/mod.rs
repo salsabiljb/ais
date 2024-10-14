@@ -3,6 +3,7 @@ use crate::errors::Result;
 use crate::lib;
 use crate::sentence::AisRawData;
 use serde::Serialize;
+#[cfg(feature = "std")]
 use std::fmt;
 
 
@@ -65,7 +66,7 @@ pub enum AisMessage {
     BinaryAddressedMessage(binary_addressed::BinaryAddressedMessage),
 }
 
-
+#[cfg(feature = "std")]
 impl fmt::Display for AisMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -90,7 +91,6 @@ impl fmt::Display for AisMessage {
             AisMessage::SafetyRelatedAcknowledgment(acknowledgment) => write!(f, "SafetyRelatedAcknowledgment: {:?}", acknowledgment),
             AisMessage::LongRangeAisBroadcastMessage(message) => write!(f, "LongRangeAisBroadcastMessage: {:?}", message),
             AisMessage::BinaryAddressedMessage(message) => write!(f, "BinaryAddressedMessage: {:?}", message),
-            _ => write!(f, "Unknown AisMessage"),
         }
     }
 }
